@@ -1,0 +1,51 @@
+# Runtime settings. Connection strings are NOT stored here: only the names of the
+# environment variables that hold them.
+
+databases:
+  ecc:
+    url_env: RECON_ECC_URL      # SAP ECC 4.7 extract database
+  s4:
+    url_env: RECON_S4_URL       # S/4HANA extract database (also holds the key-mapping tables)
+
+# Table (or view) names. In a real deployment point these at views that expose the
+# standard column contract documented in docs/architecture.md.
+tables:
+  ecc_conditions: ecc_condition_records
+  ecc_scope: ecc_pricing_scope
+  s4_conditions: s4_condition_records
+  map_customer: map_customer
+  map_material: map_material
+
+comparison:
+  # Differences up to this size (on every waterfall step) are reported as ROUNDING.
+  # Anything above is MISMATCH. Zero difference everywhere is PERFECT.
+  tolerance_rounding: "0.01"
+  # Pricing dates are evaluated as cutoff date + each offset. [0, 30] also checks
+  # what will be valid in 30 days, which exposes validity-date gaps early.
+  pricing_date_offsets_days: [0]
+  # Rounding strategy per system: per_step | at_end (see docs/architecture.md).
+  rounding:
+    ecc: per_step
+    s4: per_step
+
+run:
+  # Default data cut-off when --cutoff is not given: end of the previous day (23:59:59).
+  default_cutoff: yesterday_end
+  # A lock older than this is treated as stale (crashed run) and removed.
+  lock_stale_hours: 6
+
+output:
+  directory: output
+  excel_name: "pricing_mismatches_{cutoff:%Y%m%d}.xlsx"
+  summary_name: "run_summary_{cutoff:%Y%m%d}.json"
+  # Always produce the Excel, even when everything matches (header only), so a
+  # downstream consumer can rely on the file existing every morning.
+  write_empty_report: true
+  keep_days: 30
+
+logging:
+  directory: logs
+  file: reconciler.log
+  level: INFO
+  max_bytes: 5000000
+  backup_count: 10

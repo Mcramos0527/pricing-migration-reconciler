@@ -1,0 +1,32 @@
+# Flattened pricing waterfall definition.
+#
+# The condition types below are ILLUSTRATIVE defaults (ZREB is an invented custom type).
+# Remap them to your own pricing procedure; no code change is needed.
+#
+# Step kinds
+#   price     amount / pricing unit                     (e.g. PR00)
+#   percent   sign * pct/100 * sum(base steps)          (discounts, rebates, tax)
+#   fixed     sign * amount / pricing unit              (e.g. freight per unit)
+#   subtotal  sum of the listed steps                   (net value, total)
+
+reference_quantity: 100     # order quantity used to pick the scale tier
+decimals: 2                 # currency decimals used for rounding
+
+procedure:
+  - { id: gross,    label: Gross price,       kind: price,    cond: PR00 }
+  - { id: discount, label: Customer discount, kind: percent,  cond: K007, base: [gross], sign: -1 }
+  - { id: rebate,   label: Rebate accrual,    kind: percent,  cond: ZREB, base: [gross, discount], sign: -1 }
+  - { id: freight,  label: Freight,           kind: fixed,    cond: KF00, sign: 1 }
+  - { id: net,      label: Net value,         kind: subtotal, sum: [gross, discount, rebate, freight] }
+  - { id: tax,      label: Output tax,        kind: percent,  cond: MWST, base: [net], sign: 1 }
+  - { id: total,    label: Total incl. tax,   kind: subtotal, sum: [net, tax] }
+
+# Access sequences: for each condition type, the key levels tried in order.
+# The first level that has a valid record wins (the SAP condition technique idea).
+#   customer_material > customer > material > sales_org   (most to least specific)
+access_sequences:
+  PR00: [customer_material, material]
+  K007: [customer_material, customer]
+  ZREB: [customer]
+  KF00: [customer_material, material]
+  MWST: [customer, sales_org]

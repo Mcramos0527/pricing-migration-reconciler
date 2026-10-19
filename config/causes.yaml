@@ -1,0 +1,71 @@
+# Probable-cause catalogue. The detection logic lives in causes.py; the wording,
+# confidence and recommended action live here so analysts can adjust them without code.
+# Lower priority number wins when a row has several findings.
+
+rules:
+  R01:
+    code: NO_KEY_MAPPING
+    priority: 10
+    confidence: High
+    title: Customer or material has no mapping to S/4HANA
+    action: Check the customer/material mapping tables and the master-data load for the missing key.
+  R02:
+    code: CURRENCY_MISMATCH
+    priority: 20
+    confidence: High
+    title: Condition currency differs between ECC and S/4HANA
+    action: Check currency conversion in the load rules; amounts are not comparable until fixed.
+  R03:
+    code: PRICING_UNIT_MISMATCH
+    priority: 30
+    confidence: High
+    title: Pricing unit or unit of measure differs
+    action: Check KPEIN/KMEIN handling in the load (price per 1 vs per 100, EA vs carton).
+  R07:
+    code: VALIDITY_DATE_GAP
+    priority: 40
+    confidence: High
+    title: Record exists in S/4HANA but is not valid on the pricing date
+    action: Compare VALID FROM / VALID TO between systems; check date conversion in the load.
+  R04:
+    code: MISSING_RECORD_S4
+    priority: 50
+    confidence: High
+    title: Condition record found in ECC but missing in S/4HANA
+    action: Check the condition-record load (IDoc/flat file) for dropped or rejected records.
+  R06:
+    code: ACCESS_LEVEL_DIFFERENCE
+    priority: 60
+    confidence: Medium
+    title: S/4HANA fell back to a less specific record than ECC
+    action: A more specific record (e.g. customer/material) was probably not migrated; check the load.
+  R08:
+    code: SCALE_DIFFERENCE
+    priority: 70
+    confidence: Medium
+    title: Scale tier differs at the reference quantity
+    action: Check that all scale lines were migrated, not only the first tier.
+  R05:
+    code: EXTRA_RECORD_S4
+    priority: 80
+    confidence: Medium
+    title: Condition record exists in S/4HANA but not in ECC
+    action: Check for manual records created in S/4HANA or duplicated loads.
+  R09:
+    code: AMOUNT_CHANGED
+    priority: 90
+    confidence: Medium
+    title: Same record found in both systems but the amount differs
+    action: Check conversion or uplift rules in the load and any manual change after the cut.
+  R10:
+    code: ROUNDING
+    priority: 100
+    confidence: Medium
+    title: Difference within the rounding tolerance
+    action: Check decimal precision and rounding strategy (per step vs at end).
+  R99:
+    code: UNEXPLAINED
+    priority: 999
+    confidence: Low
+    title: No rule explains the difference
+    action: Manual review; compare the resolved records of both systems.
