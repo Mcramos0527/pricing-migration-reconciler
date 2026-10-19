@@ -12,8 +12,7 @@ action. It is built to run unattended every morning.
 
 ## About this repo
 
-I built a tool like this in a previous role and ran it daily on a VM. I did not keep the code, and it
-was not mine to keep, so this is a rebuild from scratch.
+I built a tool like this in a previous role and ran it daily on a VM. I did not keep the code, so this is a rebuild from scratch.
 
 - **Synthetic data only.** Nothing here comes from an employer or a client. The `seed` command
   generates the databases, with known differences planted in them.
