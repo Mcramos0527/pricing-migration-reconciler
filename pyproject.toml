@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pricing-migration-reconciler"
+version = "0.1.0"
+description = "Unattended reconciliation of flattened pricing waterfalls between SAP ECC 4.7 and S/4HANA"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Max Ramos" }]
+dependencies = [
+    "pandas>=2.2",
+    "sqlalchemy>=2.0",
+    "openpyxl>=3.1",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+mssql = ["pyodbc>=5.0"]
+dev = ["pytest>=8.0", "pytest-cov>=5.0", "black>=24.0"]
+
+[project.scripts]
+pricing-reconciler = "pricing_reconciler.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = ["sqlserver: needs a live SQL Server (set RECON_TEST_MSSQL_URL)"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
