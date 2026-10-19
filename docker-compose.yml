@@ -1,0 +1,46 @@
+# Local SQL Server for trying the tool against the same engine as production.
+#
+#   1. cp .env.example .env   and set MSSQL_SA_PASSWORD (URL-safe characters only)
+#   2. docker compose up -d mssql init-db
+#   3. docker compose run --rm reconciler seed --as-of 2026-10-18
+#   4. docker compose run --rm reconciler run --cutoff 2026-10-18
+#
+# Reports and logs appear in ./data
+
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD in .env}
+    ports:
+      - "1433:1433"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  init-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    depends_on:
+      mssql:
+        condition: service_healthy
+    volumes:
+      - ./scripts/create_databases.sql:/create_databases.sql:ro
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - /opt/mssql-tools18/bin/sqlcmd -S mssql -U sa -P "$$MSSQL_SA_PASSWORD" -C -i /create_databases.sql
+    environment:
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD in .env}
+
+  reconciler:
+    build: .
+    depends_on:
+      init-db:
+        condition: service_completed_successfully
+    environment:
+      RECON_ECC_URL: mssql+pyodbc://sa:${MSSQL_SA_PASSWORD}@mssql/ECC47?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes
+      RECON_S4_URL: mssql+pyodbc://sa:${MSSQL_SA_PASSWORD}@mssql/S4H?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes
+    volumes:
+      - ./data:/data
